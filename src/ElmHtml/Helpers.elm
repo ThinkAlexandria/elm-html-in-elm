@@ -1,9 +1,9 @@
-module ElmHtml.Helpers exposing (..)
+module ElmHtml.Helpers exposing (filterKnownKeys)
 
-{-|
-Internal helpers for ElmHtml
+{-| Internal helpers for ElmHtml
 
 @docs filterKnownKeys
+
 -}
 
 import Dict exposing (Dict)

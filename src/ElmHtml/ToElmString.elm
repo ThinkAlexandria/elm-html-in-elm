@@ -1,11 +1,7 @@
-module ElmHtml.ToElmString
-    exposing
-        ( toElmString
-        , nodeRecordToString
-        , toElmStringWithOptions
-        , FormatOptions
-        , defaultFormatOptions
-        )
+module ElmHtml.ToElmString exposing
+    ( nodeRecordToString, toElmString, toElmStringWithOptions
+    , FormatOptions, defaultFormatOptions
+    )
 
 {-| Convert ElmHtml to string of Elm code.
 
@@ -15,9 +11,9 @@ module ElmHtml.ToElmString
 
 -}
 
-import String
 import Dict exposing (Dict)
 import ElmHtml.InternalTypes exposing (..)
+import String
 
 
 {-| Formatting options to be used for converting to string
@@ -71,6 +67,7 @@ toElmStringWithOptions options =
         >> String.join
             (if options.newLines then
                 "\n"
+
              else
                 ""
             )
@@ -97,9 +94,9 @@ nodeRecordToString options { tag, children, facts } =
                             ""
 
                         more ->
-                            " " ++ (String.join " " more)
+                            " " ++ String.join " " more
             in
-                "Html." ++ tag ++ " [" ++ filling
+            "Html." ++ tag ++ " [" ++ filling
 
         childrenStrings =
             List.map (nodeToLines options) children
@@ -111,8 +108,8 @@ nodeRecordToString options { tag, children, facts } =
                 [] ->
                     Nothing
 
-                styles ->
-                    styles
+                stylesList ->
+                    stylesList
                         |> List.map (\( key, value ) -> "(\"" ++ key ++ "\",\"" ++ value ++ "\")")
                         |> String.join ", "
                         |> (\styleString -> "Html.Attributes.style [" ++ styleString ++ "]")
@@ -131,13 +128,13 @@ nodeRecordToString options { tag, children, facts } =
 
         boolAttributes =
             Dict.toList facts.boolAttributes
-                |> List.map (\( k, v ) -> "Html.Attributes.property \"" ++ k ++ "\" <| Json.Encode.bool " ++ toString v)
+                |> List.map (\( k, v ) -> "Html.Attributes.property \"" ++ k ++ "\" <| Json.Encode.bool " ++ (if v then "True" else "False"))
                 |> String.join " "
                 |> Just
     in
-        [ openTag [ classes, styles, stringAttributes, boolAttributes ] ]
-            ++ [ " ] "
-               , "[ "
-               , String.join "" childrenStrings
-               , "]"
-               ]
+    [ openTag [ classes, styles, stringAttributes, boolAttributes ] ]
+        ++ [ " ] "
+           , "[ "
+           , String.join "" childrenStrings
+           , "]"
+           ]

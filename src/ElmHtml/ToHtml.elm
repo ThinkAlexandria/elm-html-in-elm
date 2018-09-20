@@ -7,14 +7,14 @@ Estentially allowing the user to use tools like html-to-elm on their code.
 
 -}
 
-import String
 import Dict exposing (Dict)
 import ElmHtml.InternalTypes exposing (..)
 import Html
 import Html.Attributes
 import Html.Events
-import Json.Encode
 import Json.Decode
+import Json.Encode
+import String
 
 
 {-| Turns ElmHtml into normal Elm Html
@@ -29,27 +29,27 @@ toHtml elmHtml =
             Html.node tag [] (List.map toHtml children)
 
         CustomNode record ->
-            let
-                _ =
-                    Debug.log "Custom node is not supported" ""
-            in
-                Html.text ""
+            --let
+            --    _ =
+            --        Debug.log "Custom node is not supported" ""
+            --in
+            Html.text ""
 
         MarkdownNode record ->
-            let
-                _ =
-                    Debug.log "Markdown node is not supported" ""
-            in
-                Html.text ""
+            --let
+            --    _ =
+            --        Debug.log "Markdown node is not supported" ""
+            --in
+            Html.text ""
 
         NoOp ->
             Html.text ""
 
 
-stylesToAttribute : Dict String String -> Html.Attribute msg
+stylesToAttribute : Dict String String -> List (Html.Attribute msg)
 stylesToAttribute =
     Dict.toList
-        >> Html.Attributes.style
+        >> (List.map (\(k, v) -> Html.Attributes.style k v))
 
 
 eventsToAttributes : Dict String (Json.Decode.Decoder msg) -> List (Html.Attribute msg)
@@ -75,7 +75,7 @@ boolAttributesToAttributes =
 factsToAttributes : Facts msg -> List (Html.Attribute msg)
 factsToAttributes facts =
     List.concat
-        [ [ stylesToAttribute facts.styles ]
+        [ stylesToAttribute facts.styles
         , eventsToAttributes facts.events
         , stringAttributesToAttributes facts.stringAttributes
         , boolAttributesToAttributes facts.boolAttributes

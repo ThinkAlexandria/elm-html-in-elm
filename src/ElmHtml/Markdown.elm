@@ -1,4 +1,7 @@
-module ElmHtml.Markdown exposing (..)
+module ElmHtml.Markdown exposing
+    ( MarkdownOptions, MarkdownModel, baseMarkdownModel
+    , encodeOptions, encodeMarkdownModel, decodeMarkdownModel
+    )
 
 {-| Markdown helpers
 
@@ -8,8 +11,8 @@ module ElmHtml.Markdown exposing (..)
 
 -}
 
-import Json.Encode
 import Json.Decode exposing (field)
+import Json.Encode
 
 
 {-| Just a default markdown model

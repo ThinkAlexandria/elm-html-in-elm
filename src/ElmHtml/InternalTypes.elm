@@ -1,24 +1,9 @@
-module ElmHtml.InternalTypes
-    exposing
-        ( Attribute(..)
-        , AttributeRecord
-        , CustomNodeRecord
-        , ElementKind(..)
-        , ElmHtml(..)
-        , EventHandler
-        , EventRecord
-        , Facts
-        , MarkdownNodeRecord
-        , NamespacedAttributeRecord
-        , NodeRecord
-        , PropertyRecord
-        , Tagger
-        , TextTagRecord
-        , decodeAttribute
-        , decodeElmHtml
-        , emptyFacts
-        , toElementKind
-        )
+module ElmHtml.InternalTypes exposing
+    ( ElmHtml(..), TextTagRecord, NodeRecord, CustomNodeRecord, MarkdownNodeRecord
+    , Facts, Tagger, EventHandler, ElementKind(..)
+    , Attribute(..), AttributeRecord, NamespacedAttributeRecord, PropertyRecord, EventRecord
+    , decodeElmHtml, emptyFacts, toElementKind, decodeAttribute
+    )
 
 {-| Internal types used to represent Elm Html in pure Elm
 
@@ -194,14 +179,14 @@ type alias PropertyRecord =
 type alias EventRecord =
     { key : String
     , decoder : Json.Decode.Value
-    , options : Html.Events.Options
+    , options : { stopPropagation: Bool, preventDefault: Bool }
     }
 
 
 {-| decode a json object into ElmHtml, you have to pass a function that decodes
 events from Html Nodes. If you don't want to decode event msgs, you can ignore it:
 
-decodeElmHtml (\_ _ -> ()) jsonHtml
+decodeElmHtml (\_ \_ -> ()) jsonHtml
 
 if you do want to decode them, you will probably need to write some native code
 like elm-html-test does to extract the function inside those.
@@ -457,34 +442,38 @@ decodeAttribute =
                         (Json.Decode.field "realKey" Json.Decode.string)
                         (Json.Decode.field "value" Json.Decode.string)
                         |> Json.Decode.map Attribute
+
                 else if key == attributeNamespaceKey then
                     Json.Decode.map3 NamespacedAttributeRecord
                         (Json.Decode.field "realKey" Json.Decode.string)
                         (Json.Decode.at [ "value", "value" ] Json.Decode.string)
                         (Json.Decode.at [ "value", "namespace" ] Json.Decode.string)
                         |> Json.Decode.map NamespacedAttribute
+
                 else if key == styleKey then
-                    Json.Decode.map2 (,)
+                    Json.Decode.map2 (\a b -> ( a, b ))
                         (Json.Decode.field "_0" Json.Decode.string)
                         (Json.Decode.field "_1" Json.Decode.string)
                         |> elmListDecoder
                         |> Json.Decode.field "value"
                         |> Json.Decode.map Styles
+
                 else if key == eventKey then
                     Json.Decode.map3 EventRecord
                         (Json.Decode.field "realKey" Json.Decode.string)
                         (Json.Decode.at [ "value", "decoder" ] Json.Decode.value)
                         (Json.Decode.at [ "value", "options" ] decodeOptions)
                         |> Json.Decode.map Event
+
                 else
                     Json.Decode.field "value" Json.Decode.value
                         |> Json.Decode.map (PropertyRecord key >> Property)
             )
 
 
-decodeOptions : Json.Decode.Decoder Html.Events.Options
+decodeOptions : Json.Decode.Decoder { stopPropagation: Bool, preventDefault: Bool }
 decodeOptions =
-    Json.Decode.map2 Html.Events.Options
+    Json.Decode.map2 (\ stopPropagation preventDefault -> { stopPropagation = stopPropagation, preventDefault = preventDefault })
         (Json.Decode.field "stopPropagation" Json.Decode.bool)
         (Json.Decode.field "preventDefault" Json.Decode.bool)
 
@@ -572,10 +561,13 @@ toElementKind : String -> ElementKind
 toElementKind element =
     if List.member element voidElements then
         VoidElements
+
     else if List.member element rawTextElements then
         RawTextElements
+
     else if List.member element escapableRawTextElements then
         EscapableRawTextElements
+
     else
         -- All other allowed HTML elements are normal elements
         NormalElements

@@ -1,7 +1,6 @@
-module ElmHtml.Constants exposing (..)
+module ElmHtml.Constants exposing (styleKey, eventKey, attributeKey, attributeNamespaceKey, knownKeys)
 
-{-|
-Constants for representing internal keys for Elm's vdom implementation
+{-| Constants for representing internal keys for Elm's vdom implementation
 
 @docs styleKey, eventKey, attributeKey, attributeNamespaceKey, knownKeys
 

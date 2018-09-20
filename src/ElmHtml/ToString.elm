@@ -1,22 +1,19 @@
-module ElmHtml.ToString
-    exposing
-        ( nodeToString
-        , nodeRecordToString
-        , nodeToStringWithOptions
-        , FormatOptions
-        , defaultFormatOptions
-        )
+module ElmHtml.ToString exposing
+    ( nodeRecordToString, nodeToString, nodeToStringWithOptions
+    , FormatOptions, defaultFormatOptions
+    )
 
 {-| Convert ElmHtml to string.
 
 @docs nodeRecordToString, nodeToString, nodeToStringWithOptions
 
 @docs FormatOptions, defaultFormatOptions
+
 -}
 
-import String
 import Dict exposing (Dict)
 import ElmHtml.InternalTypes exposing (..)
+import String
 
 
 {-| Formatting options to be used for converting to string
@@ -70,14 +67,15 @@ nodeToStringWithOptions options =
         >> String.join
             (if options.newLines then
                 "\n"
+
              else
                 ""
             )
 
 
 {-| Convert a node record to a string. This basically takes the tag name, then
-    pulls all the facts into tag declaration, then goes through the children and
-    nests them under this one
+pulls all the facts into tag declaration, then goes through the children and
+nests them under this one
 -}
 nodeRecordToString : FormatOptions -> NodeRecord msg -> List String
 nodeRecordToString options { tag, children, facts } =
@@ -96,9 +94,9 @@ nodeRecordToString options { tag, children, facts } =
                             ""
 
                         more ->
-                            " " ++ (String.join " " more)
+                            " " ++ String.join " " more
             in
-                "<" ++ tag ++ filling ++ ">"
+            "<" ++ tag ++ filling ++ ">"
 
         closeTag =
             "</" ++ tag ++ ">"
@@ -113,8 +111,8 @@ nodeRecordToString options { tag, children, facts } =
                 [] ->
                     Nothing
 
-                styles ->
-                    styles
+                stylesList ->
+                    stylesList
                         |> List.map (\( key, value ) -> key ++ ":" ++ value ++ ";")
                         |> String.join ""
                         |> (\styleString -> "style=\"" ++ styleString ++ "\"")
@@ -133,23 +131,23 @@ nodeRecordToString options { tag, children, facts } =
 
         boolAttributes =
             Dict.toList facts.boolAttributes
-                |> List.map (\( k, v ) -> k ++ "=" ++ (String.toLower <| toString v))
+                |> List.map (\( k, v ) -> k ++ "=" ++ (if v then "true" else "false"))
                 |> String.join " "
                 |> Just
     in
-        case toElementKind tag of
-            {- Void elements only have a start tag; end tags must not be
-               specified for void elements.
-            -}
-            VoidElements ->
-                [ openTag [ classes, styles, stringAttributes, boolAttributes ] ]
+    case toElementKind tag of
+        {- Void elements only have a start tag; end tags must not be
+           specified for void elements.
+        -}
+        VoidElements ->
+            [ openTag [ classes, styles, stringAttributes, boolAttributes ] ]
 
-            {- TODO: implement restrictions for RawTextElements,
-               EscapableRawTextElements. Also handle ForeignElements correctly.
-               For now just punt and use the previous behavior for all other
-               element kinds.
-            -}
-            _ ->
-                [ openTag [ classes, styles, stringAttributes, boolAttributes ] ]
-                    ++ childrenStrings
-                    ++ [ closeTag ]
+        {- TODO: implement restrictions for RawTextElements,
+           EscapableRawTextElements. Also handle ForeignElements correctly.
+           For now just punt and use the previous behavior for all other
+           element kinds.
+        -}
+        _ ->
+            [ openTag [ classes, styles, stringAttributes, boolAttributes ] ]
+                ++ childrenStrings
+                ++ [ closeTag ]
