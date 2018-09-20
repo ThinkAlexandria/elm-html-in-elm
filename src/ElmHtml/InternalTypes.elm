@@ -182,6 +182,17 @@ type alias EventRecord =
     , options : { stopPropagation: Bool, preventDefault: Bool }
     }
 
+factsKey : String
+factsKey = "d"
+
+descendantsCountKey : String
+descendantsCountKey = "b"
+
+tagKey : String
+tagKey = "c"
+
+childrenKey : String
+childrenKey = "e"
 
 {-| decode a json object into ElmHtml, you have to pass a function that decodes
 events from Html Nodes. If you don't want to decode event msgs, you can ignore it:
@@ -199,30 +210,30 @@ decodeElmHtml eventDecoder =
 
 contextDecodeElmHtml : HtmlContext msg -> Json.Decode.Decoder (ElmHtml msg)
 contextDecodeElmHtml context =
-    field "type" Json.Decode.string
+    field "$" Json.Decode.int
         |> Json.Decode.andThen
-            (\typeString ->
-                case typeString of
-                    "text" ->
+            (\typeInt ->
+                case typeInt of
+                    0 ->
                         Json.Decode.map TextTag decodeTextTag
 
-                    "keyed-node" ->
+                    2 ->
                         Json.Decode.map NodeEntry (decodeKeyedNode context)
 
-                    "node" ->
+                    1 ->
                         Json.Decode.map NodeEntry (decodeNode context)
 
-                    "custom" ->
+                    3 ->
                         decodeCustomNode context
 
-                    "tagger" ->
+                    4 ->
                         decodeTagger context
 
-                    "thunk" ->
+                    5 ->
                         field "node" (contextDecodeElmHtml context)
 
                     _ ->
-                        Json.Decode.fail ("No such type as " ++ typeString)
+                        Json.Decode.fail ("No such type as " ++ String.fromInt typeInt)
             )
 
 
@@ -230,32 +241,31 @@ contextDecodeElmHtml context =
 -}
 decodeTextTag : Json.Decode.Decoder TextTagRecord
 decodeTextTag =
-    field "text" (Json.Decode.andThen (\text -> Json.Decode.succeed { text = text }) Json.Decode.string)
+    field "a" (Json.Decode.andThen (\text -> Json.Decode.succeed { text = text }) Json.Decode.string)
 
 
 {-| encode text tag
 -}
 encodeTextTag : TextTagRecord -> Json.Encode.Value
 encodeTextTag { text } =
-    Json.Encode.object [ ( "text", Json.Encode.string text ) ]
+    Json.Encode.object [ ( "a", Json.Encode.string text ) ]
 
 
 {-| decode a tagger
 -}
 decodeTagger : HtmlContext msg -> Json.Decode.Decoder (ElmHtml msg)
 decodeTagger (HtmlContext taggers eventDecoder) =
-    Json.Decode.field "tagger" Json.Decode.value
+    Json.Decode.field "j" Json.Decode.value
         |> Json.Decode.andThen
             (\tagger ->
                 let
                     nodeDecoder =
                         contextDecodeElmHtml (HtmlContext (taggers ++ [ tagger ]) eventDecoder)
                 in
-                Json.Decode.oneOf
-                    [ Json.Decode.at [ "node" ] nodeDecoder
-                    , Json.Decode.at [ "text" ] nodeDecoder
-                    , Json.Decode.at [ "custom" ] nodeDecoder
-                    ]
+                -- The child node is at the k field of tagger
+                -- TODO determine if the descendantsCount should be updated for this node,
+                -- because the tagger object counds as one node. this.b = 1 + (this.k.b || 0)
+                Json.Decode.at [ "k" ] nodeDecoder
             )
 
 
@@ -265,13 +275,13 @@ decodeKeyedNode context =
         -- elm stores keyed nodes as tuples
         -- we only want to decode the html, in the second property
         decodeSecondNode =
-            Json.Decode.field "_1" (contextDecodeElmHtml context)
+            Json.Decode.field "b" (contextDecodeElmHtml context)
     in
     Json.Decode.map4 NodeRecord
-        (Json.Decode.field "tag" Json.Decode.string)
-        (Json.Decode.field "children" (Json.Decode.list decodeSecondNode))
-        (Json.Decode.field "facts" (decodeFacts context))
-        (Json.Decode.field "descendantsCount" Json.Decode.int)
+        (Json.Decode.field tagKey Json.Decode.string)
+        (Json.Decode.field childrenKey (Json.Decode.list decodeSecondNode))
+        (Json.Decode.field factsKey (decodeFacts context))
+        (Json.Decode.field descendantsCountKey Json.Decode.int)
 
 
 {-| decode a node record
@@ -279,10 +289,10 @@ decodeKeyedNode context =
 decodeNode : HtmlContext msg -> Json.Decode.Decoder (NodeRecord msg)
 decodeNode context =
     Json.Decode.map4 NodeRecord
-        (field "tag" Json.Decode.string)
-        (field "children" (Json.Decode.list (contextDecodeElmHtml context)))
-        (field "facts" (decodeFacts context))
-        (field "descendantsCount" Json.Decode.int)
+        (field tagKey Json.Decode.string)
+        (field childrenKey (Json.Decode.list (contextDecodeElmHtml context)))
+        (field factsKey (decodeFacts context))
+        (field descendantsCountKey Json.Decode.int)
 
 
 {-| encode a node record: currently does not support facts or children
@@ -290,11 +300,11 @@ decodeNode context =
 encodeNodeRecord : NodeRecord msg -> Json.Encode.Value
 encodeNodeRecord record =
     Json.Encode.object
-        [ ( "tag", Json.Encode.string record.tag )
+        [ ( tagKey, Json.Encode.string record.tag )
 
-        --, ( "children", Json.Encode.list encodeElmHtml)
-        --, ( "facts", encodeFacts)
-        , ( "descendantsCount", Json.Encode.int record.descendantsCount )
+        --, ( childrenKey, Json.Encode.list encodeElmHtml)
+        --, ( factsKey, encodeFacts)
+        , ( descendantsCountKey, Json.Encode.int record.descendantsCount )
         ]
 
 
@@ -313,8 +323,8 @@ decodeCustomNode context =
 decodeCustomNodeRecord : HtmlContext msg -> Json.Decode.Decoder (CustomNodeRecord msg)
 decodeCustomNodeRecord context =
     Json.Decode.map2 CustomNodeRecord
-        (field "facts" (decodeFacts context))
-        (field "model" Json.Decode.value)
+        (field factsKey (decodeFacts context))
+        (field "g" Json.Decode.value)
 
 
 {-| decode markdown node record
@@ -322,8 +332,8 @@ decodeCustomNodeRecord context =
 decodeMarkdownNodeRecord : HtmlContext msg -> Json.Decode.Decoder (MarkdownNodeRecord msg)
 decodeMarkdownNodeRecord context =
     Json.Decode.map2 MarkdownNodeRecord
-        (field "facts" (decodeFacts context))
-        (field "model" decodeMarkdownModel)
+        (field factsKey (decodeFacts context))
+        (field "g" decodeMarkdownModel)
 
 
 {-| decode the styles

@@ -3,7 +3,7 @@
     "name": "ThinkAlexandria/elm-html-in-elm",
     "summary": "A pure Elm representation of Elm Html",
     "license": "BSD-3-Clause",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "exposed-modules": [
         "ElmHtml.Constants",
         "ElmHtml.InternalTypes",

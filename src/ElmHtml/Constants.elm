@@ -11,28 +11,31 @@ module ElmHtml.Constants exposing (styleKey, eventKey, attributeKey, attributeNa
 -}
 styleKey : String
 styleKey =
-    "STYLE"
+    "a1"
 
 
-{-| Internal key for style
+{-| Internal key for 'on' events
 -}
 eventKey : String
 eventKey =
-    "EVENT"
+    "a0"
 
+propertyKey : String
+propertyKey =
+    "a2"
 
-{-| Internal key for style
+{-| Internal key for attributes
 -}
 attributeKey : String
 attributeKey =
-    "ATTR"
+    "a3"
 
 
-{-| Internal key for style
+{-| Internal key for namespaced attributes
 -}
 attributeNamespaceKey : String
 attributeNamespaceKey =
-    "ATTR_NS"
+    "a4"
 
 
 {-| Keys that we are aware of and should pay attention to

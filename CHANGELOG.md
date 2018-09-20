@@ -1,5 +1,11 @@
 # Change Log
 
+# [1.0.1] - 2018-09-20
+
+## Fixed
+
+* now properly handles Elm 0.19's internal virtual dom JSON structure.
+
 ## [1.0.0] - 2018-09-20
 
 ### Changed
